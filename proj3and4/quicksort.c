@@ -8,7 +8,7 @@
 #include "array_tools.h"
 
 // You decide what the threshold will be
-#define USE_INSERTION_SORT 5
+#define USE_INSERTION_SORT 20
 
 typedef struct {
 	array_t array;
@@ -32,6 +32,7 @@ void insertion_sort( array_interval_t interval) {
 	size_t j, k;
 	double tmp;
 	array_type *array = interval.array.array;
+	
 	for ( k = interval.a + 1; k < interval.c; ++k ) {
 		tmp = array[k];
 		for ( j = k; j > interval.a; --j ) {
@@ -57,7 +58,7 @@ __task void quick_sort_task( void* void_ptr){
 	array_interval_t interval = task_params->interval;
 
 	while(true) {
-		if(interval.a - interval.c < 20) {
+		if(interval.c - interval.a < USE_INSERTION_SORT) {
 			insertion_sort(interval);
 			break;
 		}
@@ -90,11 +91,14 @@ __task void quick_sort_task( void* void_ptr){
 		pivotIndex = up;
 
 		task_params->interval.c = pivotIndex;
+		task_params->priority++;
 
 		os_tsk_create_ex( quick_sort_task, task_params->priority+1, task_params );
 
 		interval.a = pivotIndex+1;
 	}
+	printf("donetask");
+	os_tsk_delete_self();
 }
 
 __task void quick_sort_task_sem( void* void_ptr){
@@ -105,9 +109,9 @@ __task void quick_sort_task_sem( void* void_ptr){
 	OS_SEM *mutex = task_params->mutex;
 	unsigned int *count = task_params->count;
 	array_interval_t	interval = task_params->interval;
-
+	
 	while(true) {
-		if(interval.a - interval.c < 20) {
+		if(interval.a - interval.c < USE_INSERTION_SORT) {
 			insertion_sort(interval);
 			break;
 		}
@@ -151,6 +155,7 @@ __task void quick_sort_task_sem( void* void_ptr){
 	os_sem_wait(mutex, 0xffff);
 	(*count)--;
 	os_sem_send(mutex);
+	os_tsk_delete_self();
 }
 
 void quicksort( array_t array ) {
@@ -170,6 +175,7 @@ void quicksort( array_t array ) {
 
 	//start the quick_sort threading
 	os_tsk_create_ex( quick_sort_task, task_param.priority, &task_param );
+	printf("done");
 }
 
 void quicksort_sem( array_t array ) {

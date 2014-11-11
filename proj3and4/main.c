@@ -64,7 +64,7 @@ int main( void ) {
 	
 	SystemInit();
 	SystemCoreClockUpdate();
-
+	
 	printf(" ");
 	// We will change the value of the seed for the test
 	srand( 10 );
