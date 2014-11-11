@@ -21,7 +21,7 @@ typedef struct{
 	unsigned char priority;
 } qsort_task_parameters_t;
 
-typdef struct{
+typedef struct{
 	array_interval_t interval;
 	unsigned char priority;
 	unsigned int *count;
@@ -31,7 +31,7 @@ typdef struct{
 void insertion_sort( array_interval_t interval) {
 	size_t j, k;
 	double tmp;
-	array_t = interval.array.array;
+	array_type *array = interval.array.array;
 	for ( k = interval.a + 1; k < interval.c; ++k ) {
 		tmp = array[k];
 		for ( j = k; j > interval.a; --j ) {
@@ -53,8 +53,8 @@ __task void quick_sort_task( void* void_ptr){
   // Your implementation here
 	array_type pivot, temp;
 	size_t up , down, pivotIndex;
-	qsort_task_parameters_t task_params;
-	array_interval_t	interval = ((qsort_task_parameters_t *) void_ptr)->interval;
+	qsort_task_parameters_t *task_params = ((qsort_task_parameters_t *) void_ptr);
+	array_interval_t interval = task_params->interval;
 
 	while(true) {
 		if(interval.a - interval.c < 20) {
@@ -89,11 +89,9 @@ __task void quick_sort_task( void* void_ptr){
 		}
 		pivotIndex = up;
 
-		task_params.interval.array = interval.array;
-		task_params.interval.a = interval.a;
-		task_params.interval.c = pivotIndex;
+		task_params->interval.c = pivotIndex;
 
-		os_tsk_create_ex( quick_sort_task, task_params.priority+1, &task_params );
+		os_tsk_create_ex( quick_sort_task, task_params->priority+1, task_params );
 
 		interval.a = pivotIndex+1;
 	}
@@ -103,8 +101,7 @@ __task void quick_sort_task_sem( void* void_ptr){
 	// Your implementation here
 	array_type pivot, temp;
 	size_t up , down, pivotIndex;
-	qsort_task_parameters_sem_t *task_params;
-	task_params = ((qsort_task_parameters_t *) void_ptr);
+	qsort_task_parameters_sem_t *task_params = ((qsort_task_parameters_sem_t *) void_ptr);
 	OS_SEM *mutex = task_params->mutex;
 	unsigned int *count = task_params->count;
 	array_interval_t	interval = task_params->interval;
@@ -142,20 +139,18 @@ __task void quick_sort_task_sem( void* void_ptr){
 		}
 		pivotIndex = up;
 
-		task_params.interval.array = interval.array;
-		task_params.interval.a = interval.a;
-		task_params.interval.c = pivotIndex;
+		task_params->interval.c = pivotIndex;
 
-		os_sem_wait(mutex);
+		os_sem_wait(mutex, 0xffff);
 		(*count)++;
 		os_sem_send(mutex);
-		os_tsk_create_ex( quick_sort_task, task_params.priority, &task_params );
+		os_tsk_create_ex( quick_sort_task, task_params->priority, task_params );
 
 		interval.a = pivotIndex+1;
 	}
-	os_sem_wait(mutex);
-	(*count)++;
-	os_sem_post(mutex);
+	os_sem_wait(mutex, 0xffff);
+	(*count)--;
+	os_sem_send(mutex);
 }
 
 void quicksort( array_t array ) {
@@ -174,12 +169,14 @@ void quicksort( array_t array ) {
 	task_param.priority = 10;
 
 	//start the quick_sort threading
-	os_tsk_create_ex( quick_sort_task, task_params.priority, &task_params );
+	os_tsk_create_ex( quick_sort_task, task_param.priority, &task_param );
 }
 
 void quicksort_sem( array_t array ) {
 	array_interval_t interval;
 	qsort_task_parameters_sem_t task_param;
+	OS_SEM counterSem;
+	unsigned int counter = 1;
 
 	interval.array =  array;
 	interval.a     =  0;
@@ -190,22 +187,20 @@ void quicksort_sem( array_t array ) {
 	// If you are using priorities, you can change this
 	task_param.priority = 10;
 
-	OS_SEM counterSem;
 	os_sem_init(counterSem, 0);
-	unsigned int counter = 1;
 
 	task_param.mutex = &counterSem;
-	task_param.counter = &count;
+	task_param.count = &counter;
 
 	//start the quick_sort threading
-	os_tsk_create_ex( quick_sort_task_sem, task_params.priority, &task_params );
+	os_tsk_create_ex( quick_sort_task_sem, task_param.priority, &task_param );
 
 	while(true) {
-		os_sem_wait(&counterSem);
+		os_sem_wait(&counterSem, 0xffff);
 		if(counter == 0) {
 			os_sem_send(&counterSem);
 			break;
 		}
-		os_sem_post(&counterSem);
+		os_sem_send(&counterSem);
 	}
 }
