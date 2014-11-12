@@ -26,6 +26,7 @@ static array_t generate_random_array( void ) {
   result.length = LARGE_ARRAY;
   //Statically allocating memory like: array = (array_type *) malloc(sizeof(array_type) * LARGE_ARRAY);
   result.array = (array_type *) (0x2007C000);
+	//result.array = (array_type *) malloc(sizeof(array_type) * LARGE_ARRAY);
   
   //How many blocks are going to randomly assigned.
   blks = LARGE_ARRAY / SEGMENTS;

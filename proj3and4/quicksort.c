@@ -24,7 +24,6 @@ typedef struct{
 typedef struct{
 	array_interval_t interval;
 	unsigned char priority;
-	unsigned int *count;
 	OS_SEM *mutex;
 } qsort_task_parameters_sem_t;
 
@@ -56,7 +55,8 @@ __task void quick_sort_task( void* void_ptr){
 	size_t up , down, pivotIndex;
 	qsort_task_parameters_t *task_params = ((qsort_task_parameters_t *) void_ptr);
 	array_interval_t interval = task_params->interval;
-
+	unsigned char priority = task_params->priority;
+	
 	while(true) {
 		if(interval.c - interval.a < USE_INSERTION_SORT) {
 			insertion_sort(interval);
@@ -65,17 +65,17 @@ __task void quick_sort_task( void* void_ptr){
 		pivot = interval.array.array[interval.c-1];
 
 		up = interval.a;
-		down = interval.c;
+		down = interval.c-2;
 
 		while (true){
-			while(interval.array.array[up] < pivot){
+			while(interval.array.array[up] <= pivot && up <= down){
 				up++;
 			}
-			while(interval.array.array[down] > pivot){
+			while(interval.array.array[down] > pivot && up <= down && down > interval.a){
 				down--;
 			}
 
-			if(up > down){
+			if(up >= down){
 				break;
 			}
 			//Swap values where array stopped
@@ -83,21 +83,22 @@ __task void quick_sort_task( void* void_ptr){
 			interval.array.array[up] = interval.array.array[down];
 			interval.array.array[down] = temp;
 		}
-
 		if(up < interval.c-1){
 			interval.array.array[interval.c-1] = interval.array.array[up];
 			interval.array.array[up] = pivot;
+			pivotIndex = up;
 		}
-		pivotIndex = up;
+		else {
+			pivotIndex = down;
+		}
 
 		task_params->interval.c = pivotIndex;
-		task_params->priority++;
 
-		os_tsk_create_ex( quick_sort_task, task_params->priority+1, task_params );
+		os_tsk_create_ex( quick_sort_task, priority+1, task_params );
 
 		interval.a = pivotIndex+1;
 	}
-	printf("donetask");
+		
 	os_tsk_delete_self();
 }
 
@@ -106,29 +107,27 @@ __task void quick_sort_task_sem( void* void_ptr){
 	array_type pivot, temp;
 	size_t up , down, pivotIndex;
 	qsort_task_parameters_sem_t *task_params = ((qsort_task_parameters_sem_t *) void_ptr);
+	qsort_task_parameters_sem_t task_params2;
 	OS_SEM *mutex = task_params->mutex;
-	unsigned int *count = task_params->count;
-	array_interval_t	interval = task_params->interval;
+	OS_SEM mutex1, mutex2;
+	array_interval_t interval = task_params->interval;
 	
-	while(true) {
-		if(interval.a - interval.c < USE_INSERTION_SORT) {
-			insertion_sort(interval);
-			break;
-		}
+	
+	if(interval.c - interval.a >= USE_INSERTION_SORT) {
 		pivot = interval.array.array[interval.c-1];
 
 		up = interval.a;
-		down = interval.c;
+		down = interval.c-2;
 
 		while (true){
-			while(interval.array.array[up] < pivot){
+			while(interval.array.array[up] <= pivot && up <= down){
 				up++;
 			}
-			while(interval.array.array[down] > pivot){
+			while(interval.array.array[down] > pivot && up <= down && down > interval.a){
 				down--;
 			}
 
-			if(up > down){
+			if(up >= down){
 				break;
 			}
 			//Swap values where array stopped
@@ -136,25 +135,35 @@ __task void quick_sort_task_sem( void* void_ptr){
 			interval.array.array[up] = interval.array.array[down];
 			interval.array.array[down] = temp;
 		}
-
 		if(up < interval.c-1){
 			interval.array.array[interval.c-1] = interval.array.array[up];
 			interval.array.array[up] = pivot;
+			pivotIndex = up;
 		}
-		pivotIndex = up;
+		else {
+			pivotIndex = down;
+		}
 
 		task_params->interval.c = pivotIndex;
-
-		os_sem_wait(mutex, 0xffff);
-		(*count)++;
-		os_sem_send(mutex);
-		os_tsk_create_ex( quick_sort_task, task_params->priority, task_params );
-
-		interval.a = pivotIndex+1;
+		task_params2.interval.a = pivotIndex+1;
+		task_params2.interval.c = interval.c;
+		
+		os_sem_init(&mutex1,1);
+		os_sem_init(&mutex2,1);
+		task_params->mutex = &mutex1;
+		task_params2.mutex = &mutex2;
+		
+		os_tsk_create_ex( quick_sort_task_sem, task_params->priority, task_params );
+		os_tsk_create_ex( quick_sort_task_sem, task_params->priority, &task_params2 );
+		
+		os_sem_wait(mutex1, 0xffff);
+		os_sem_wait(mutex2, 0xffff);
 	}
-	os_sem_wait(mutex, 0xffff);
-	(*count)--;
+	else {
+		insertion_sort(interval);
+	}
 	os_sem_send(mutex);
+
 	os_tsk_delete_self();
 }
 
@@ -181,8 +190,7 @@ void quicksort( array_t array ) {
 void quicksort_sem( array_t array ) {
 	array_interval_t interval;
 	qsort_task_parameters_sem_t task_param;
-	OS_SEM counterSem;
-	unsigned int counter = 1;
+	OS_SEM mutex;
 
 	interval.array =  array;
 	interval.a     =  0;
@@ -193,20 +201,12 @@ void quicksort_sem( array_t array ) {
 	// If you are using priorities, you can change this
 	task_param.priority = 10;
 
-	os_sem_init(counterSem, 0);
+	os_sem_init(mutex, 1);
 
-	task_param.mutex = &counterSem;
-	task_param.count = &counter;
+	task_param.mutex = &mutex;
 
 	//start the quick_sort threading
 	os_tsk_create_ex( quick_sort_task_sem, task_param.priority, &task_param );
 
-	while(true) {
-		os_sem_wait(&counterSem, 0xffff);
-		if(counter == 0) {
-			os_sem_send(&counterSem);
-			break;
-		}
-		os_sem_send(&counterSem);
-	}
+	os_sem_wait(&mutex, 0xffff);
 }

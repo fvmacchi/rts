@@ -46,6 +46,7 @@ __task void base_task( void ) {
 		#else
 			quicksort( array );
 		#endif
+		printf("done");
 
 		time = os_time_get() - time;
 
