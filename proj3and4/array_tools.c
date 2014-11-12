@@ -4,7 +4,7 @@
 #include "array_tools.h"
 
 //After the refactoring, it'd better to be moved into array_tools.h.
-#define  SEGMENTS    ( 1 << 3  )
+#define  SEGMENTS    ( 1 << 3 )
 
 // Local prototypes
 static array_t generate_random_array( void );

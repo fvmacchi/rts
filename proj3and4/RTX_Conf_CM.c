@@ -24,7 +24,7 @@
 //   <i> Define max. number of tasks that will run at the same time.
 //   <i> Default: 6
 #ifndef OS_TASKCNT
- #define OS_TASKCNT     7
+ #define OS_TASKCNT     20
 #endif
 
 //   <o>Number of tasks with user-provided stack <0-250>
@@ -47,7 +47,7 @@
 // <i> Include the stack checking code for a stack overflow.
 // <i> Note that additional code reduces the Kernel performance.
 #ifndef OS_STKCHECK
- #define OS_STKCHECK    1
+ #define OS_STKCHECK    0
 #endif
 
 // <q>Run in privileged mode
@@ -83,7 +83,7 @@
 // =============================
 // <i> Enable Round-Robin Task switching.
 #ifndef OS_ROBIN
- #define OS_ROBIN       1
+ #define OS_ROBIN       0
 #endif
 
 //   <o>Round-Robin Timeout [ticks] <1-1000>
