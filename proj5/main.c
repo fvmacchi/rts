@@ -2,20 +2,21 @@
 #include "glcd.h"
 #include <RTL.h>
 #include <stdio.h>
-
-volatile int createball = 0;
+#include "ball.h"
+#include "linked_list.h"
 
 const int size = 51;
 unsigned int position = 0;
 unsigned short ball_bitmap[size*size];
+int SCREEN_WIDTH = 320;
+int SCREEN_HEIGHT = 240;
+
+volatile int createball = 0;
 
 //SIZE MUST BE AN ODD NUMBER
 void create_circle_bitmap(unsigned short *bitmap, int size) {
 	int i, k;
 	int radius = size/2;
-	for(i = 0; i < size*size; i++) {
-		bitmap[i] = Red;
-	}
 	for(i = -radius; i <= radius; i++) {
 		for(k = -radius; k <= radius; k++) {
 			bitmap[(i+radius)*size+k+radius] = (i*i + k*k < radius*radius) ? Blue : White;
