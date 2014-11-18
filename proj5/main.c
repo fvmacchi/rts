@@ -5,21 +5,20 @@
 
 volatile int createball = 0;
 
-OS_MUT glcdMut;
-
-unsigned const int size = 21;
+const int size = 51;
 unsigned int position = 0;
 unsigned short ball_bitmap[size*size];
 
 //SIZE MUST BE AN ODD NUMBER
-void create_circle_bitmap(unsigned short *bitmap, unsigned int size) {
-	unsigned int i, k;
-	unsigned short colour;
-	unsigned int radius = size/2;
+void create_circle_bitmap(unsigned short *bitmap, int size) {
+	int i, k;
+	int radius = size/2;
+	for(i = 0; i < size*size; i++) {
+		bitmap[i] = Red;
+	}
 	for(i = -radius; i <= radius; i++) {
 		for(k = -radius; k <= radius; k++) {
-			colour = i*i + k*k < radius*radius ? Blue : White;
-			bitmap[(i+radius)*size+k+radius] = colour;
+			bitmap[(i+radius)*size+k+radius] = (i*i + k*k < radius*radius) ? Blue : White;
 		}
 	}
 }
@@ -40,8 +39,7 @@ void EINT3_IRQHandler( void ) {
 	}
 }
 
-__task void init_task( void ) {	
-	os_mut_init(&glcdMut);
+__task void init_task( void ) {
 	create_circle_bitmap(ball_bitmap, size);
 	while(1) {
 		if(createball) {
