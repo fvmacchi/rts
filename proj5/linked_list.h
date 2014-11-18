@@ -14,12 +14,12 @@ typedef struct linked_list {
 	linked_node_t *current;
 }linked_list_t;
 
-void list_init( void );
+void list_init(linked_list_t *list);
 
-void list_add( void );
+void list_add(linked_list_t *list, list_type *content);
 
-list_type *list_current( void );
+list_type *list_current(linked_list_t *list);
 
-list_type *list_next( void );
+list_type *list_next(linked_list_t *list);
 
-void list_reset( void );
+void list_reset(linked_list_t *list);

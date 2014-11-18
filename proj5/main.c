@@ -5,28 +5,13 @@
 #include "ball.h"
 #include "linked_list.h"
 
-const int size = 51;
-unsigned int position = 0;
-unsigned short ball_bitmap[size*size];
 int SCREEN_WIDTH = 320;
 int SCREEN_HEIGHT = 240;
 
 volatile int createball = 0;
 
-//SIZE MUST BE AN ODD NUMBER
-void create_circle_bitmap(unsigned short *bitmap, int size) {
-	int i, k;
-	int radius = size/2;
-	for(i = -radius; i <= radius; i++) {
-		for(k = -radius; k <= radius; k++) {
-			bitmap[(i+radius)*size+k+radius] = (i*i + k*k < radius*radius) ? Blue : White;
-		}
-	}
-}
-
 __task void newBall( void *pointer ) {
-	GLCD_Bitmap(position,position,size,size,(unsigned char*)ball_bitmap);
-	position += size;
+	ball_t ball;
 	os_tsk_delete_self();
 }
 
@@ -41,7 +26,6 @@ void EINT3_IRQHandler( void ) {
 }
 
 __task void init_task( void ) {
-	create_circle_bitmap(ball_bitmap, size);
 	while(1) {
 		if(createball) {
 			os_tsk_create_ex(newBall, 10, NULL);

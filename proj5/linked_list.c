@@ -1,8 +1,10 @@
+#include <LPC17XX.H>
+#include <stdio.h>
 #include "linked_list.h"
 
 void init_list(linked_list_t *list) {
 	list->root = NULL;
-	list->current = root;
+	list->current = list->root;
 }
 
 void list_add(linked_list_t *list, list_type *content) {
@@ -20,7 +22,7 @@ void list_add(linked_list_t *list, list_type *content) {
 
 list_type *list_current(linked_list_t *list) {
 	if(list->current != NULL) {
-		return current->content;
+		return list->current->content;
 	}
 	return NULL;
 }
