@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "linked_list.h"
 
-void init_list(linked_list_t *list) {
+void list_init(linked_list_t *list) {
 	list->root = NULL;
 	list->current = list->root;
 }
@@ -35,6 +35,10 @@ list_type *list_next(linked_list_t *list) {
 	return 0;
 }
 
-void list_reset(linked_list_t *list) {
+list_type *list_reset(linked_list_t *list) {
 	list->current = list->root;
+	if(list->current) {
+		return list->current->content;
+	}
+	return NULL;
 }

@@ -22,4 +22,4 @@ list_type *list_current(linked_list_t *list);
 
 list_type *list_next(linked_list_t *list);
 
-void list_reset(linked_list_t *list);
+list_type *list_reset(linked_list_t *list);

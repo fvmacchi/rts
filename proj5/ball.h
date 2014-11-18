@@ -14,8 +14,4 @@ typedef struct ball{
 
 void ball_init(ball_t *ball, int size, int x, int y, int velx, int vely);
 
-void ball_draw(ball_t *ball);
-
-void ball_update(ball_t *ball);
-
 #endif

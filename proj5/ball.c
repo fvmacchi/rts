@@ -22,13 +22,5 @@ void ball_init(ball_t *ball, int size, int x, int y, int velx, int vely) {
 	ball->y = y;
 	ball->velx = velx;
 	ball->vely = vely;
-}
-
-void ball_draw(ball_t *ball) {
-	GLCD_Bitmap(ball->x,ball->y,ball->size,ball->size,(unsigned char*)ball->bitmap);
-}
-
-void ball_update(ball_t *ball) {
-	ball->x += ball->velx;
-	ball->y += ball->vely;
+	ball->size = size;
 }
