@@ -2,6 +2,7 @@
 #include "glcd.h"
 #include <RTL.h>
 #include <stdio.h>
+#include "bitmap.h"
 #include "linked_list.h"
 #include "ball.h"
 
@@ -21,8 +22,7 @@ __task void newBall( void *pointer ) {
 	ball_t ball;
 	int x0, y0;
 	int x, y, width, height;
-	unsigned short *bitmap;
-	ball_init(&ball, 31, 0, 0, 1, 1);
+	ball_init(&ball, 31, Blue, 0, 0, 1, 1);
 	os_mut_wait(&listMut, 0xffff);
 	list_add(&ball_list, &ball);
 	os_mut_release(&listMut);
@@ -105,9 +105,6 @@ __task void init_task( void ) {
 	os_mut_wait(&listMut, 0xffff);
 	list_init(&ball_list);
 	os_mut_release(&listMut);
-	for(i = 0; i < MAX_SIZE*MAX_SIZE; i++) {
-		clear_bitmap[i] = White;
-	}
 	os_tsk_create(physics,10);
 }
 
