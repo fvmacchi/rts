@@ -8,8 +8,8 @@
 int SCREEN_WIDTH = 320;
 int SCREEN_HEIGHT = 240;
 
-const int MAX_SIZE = 50;
-unsigned short clear_bitmap[MAX_SIZE*MAX_SIZE];
+const int MAX_SIZE = 55;
+unsigned short bitmap[MAX_SIZE*MAX_SIZE];
 
 OS_MUT listMut, drawMut;
 
@@ -19,16 +19,50 @@ volatile int createball = 0;
 
 __task void newBall( void *pointer ) {
 	ball_t ball;
+	int x0, y0;
+	int x, y, width, height;
+	unsigned short *bitmap;
 	ball_init(&ball, 31, 0, 0, 1, 1);
 	os_mut_wait(&listMut, 0xffff);
 	list_add(&ball_list, &ball);
 	os_mut_release(&listMut);
 	while(1) {
 		os_mut_wait(&drawMut,0xffff);
-		GLCD_Bitmap(ball.x,ball.y,ball.size,ball.size,(unsigned char *)clear_bitmap);
+		bitmap_circle(bitmap, ball.size, ball.colour);
+		x0 = ball.x;
+		y0 = ball.y;
 		ball.x += ball.velx;
 		ball.y += ball.vely;
-		GLCD_Bitmap(ball.x,ball.y,ball.size,ball.size,ball.bitmap);
+		GLCD_Bitmap(ball.x,ball.y,ball.size,ball.size,(unsigned char *)bitmap);
+		bitmap_clear(bitmap, ball.size);
+		// Clear previous ball image
+		y = y0;
+		height = ball.size;
+		if(x0 < ball.x) {
+			x = x0;
+			width = ball.x - x0;
+		}
+		else {
+			x = ball.x + ball.size;
+			width = x0 - ball.x;
+		}
+		if(y0 < ball.y) {
+			y = y0;
+			height = ball.y - y0;
+		}
+		else {
+			y = ball.y + ball.size;
+			height = y0 - ball.y;
+		}
+		if(x0 < ball.x) {
+			x = ball.x;
+			width = ball.size - ball.x + x0;
+		}
+		else {
+			x = x0;
+			width = ball.size - x0 + ball.x;
+		}
+		GLCD_Bitmap(x,y,width,height,(unsigned char *)bitmap);
 		os_mut_release(&drawMut);
 		os_tsk_pass();
 	}
@@ -40,7 +74,7 @@ void EINT3_IRQHandler( void ) {
 	// Check whether the interrupt is called on the falling edge. GPIO Interrupt Status for Falling edge.
 	if ( LPC_GPIOINT->IO2IntStatF && (0x01 << 10) ) {
 		LPC_GPIOINT->IO2IntClr |= (1 << 10); // clear interrupt condition
-		
+
 		createball = 1;
 	}
 }
@@ -82,13 +116,13 @@ int main( void ) {
 	SystemCoreClockUpdate();
 	GLCD_Init();
 	GLCD_Clear(White);
-	
+
 	// P2.10 is related to the INT0 or the push button.
-	// P2.10 is selected for the GPIO 
-	LPC_PINCON->PINSEL4 &= ~(3<<20); 
+	// P2.10 is selected for the GPIO
+	LPC_PINCON->PINSEL4 &= ~(3<<20);
 
 	// P2.10 is an input port
-	LPC_GPIO2->FIODIR   &= ~(1<<10); 
+	LPC_GPIO2->FIODIR   &= ~(1<<10);
 
 	// P2.10 reads the falling edges to generate the IRQ
 	// - falling edge of P2.10
@@ -97,6 +131,6 @@ int main( void ) {
 	// IRQ is enabled in NVIC. The name is reserved and defined in `startup_LPC17xx.s'.
 	// The name is used to implemet the interrupt handler above,
 	NVIC_EnableIRQ( EINT3_IRQn );
-	
+
 	os_sys_init(init_task);
 }
