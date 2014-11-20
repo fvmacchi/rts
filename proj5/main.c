@@ -22,12 +22,21 @@ __task void newBall( void *pointer ) {
 	ball_t ball;
 	int x0, y0;
 	int x, y, width, height;
-	ball_init(&ball, 31, Blue, 0, 0, 1, 1);
+	volatile double lastTime = os_time_get();
+	volatile double dt = 0;
+	ball_init(&ball, 11, Blue, 0, 0, 1, 1);
 	os_mut_wait(&listMut, 0xffff);
 	list_add(&ball_list, &ball);
 	os_mut_release(&listMut);
 	while(1) {
 		os_mut_wait(&drawMut,0xffff);
+		dt = os_time_get() - lastTime;
+		if(dt < 1) {
+			os_mut_release(&drawMut);
+			os_tsk_pass();
+			continue;
+		}
+		lastTime = os_time_get();
 		bitmap_circle(bitmap, ball.size, ball.colour);
 		x0 = ball.x;
 		y0 = ball.y;
@@ -97,9 +106,10 @@ __task void physics( void ) {
 	ball_t *ball = NULL;
 	while(1) {
 		if(createball) {
-			os_tsk_create_ex(newBall, 10, NULL);
 			createball = 0;
+			os_tsk_create_ex(newBall, 10, NULL);
 		}
+		/*
 		os_mut_wait(&listMut, 0xffff);
 		{
 			ball = list_reset(&ball_list);
@@ -108,6 +118,7 @@ __task void physics( void ) {
 			}
 		}
 		os_mut_release(&listMut);
+		*/
 		os_tsk_pass();
 	}
 }
