@@ -16,6 +16,8 @@ OS_MUT drawMut;
 
 int numBalls = 0;
 
+int speed = 1;
+
 volatile int createball = 0;
 volatile double lastInterupt;
 volatile unsigned char ADC_Done = 0; 
@@ -58,6 +60,16 @@ void ADC_IRQHandler( void ) {
 	ADC_Done = 1;
 }
 
+unsigned short int ADCValue( void ) {
+
+	// Busy wainting until the conversion is done
+	while ( !ADC_Done ) {
+		// Wait for IRQ handler
+	}
+
+	return ADC_Value;
+}
+
 // Turn on the LED inn a position within 0..7
 void turnOnLED( unsigned char led ) {
 	unsigned int mask = (1 << ledPosArray[led]);
@@ -91,7 +103,8 @@ __task void newBall( void *pointer ) {
 	ball_t ball;
 	int x0, y0;
 	int x, y, width, height;
-	unsigned int multiplier;
+	int velx, vely;
+	int multiplier;
 	volatile double lastTime = os_time_get();
 	volatile double dt = 0;
 	ball_init(&ball, 25, Blue, 0, 0, 1, 1);
@@ -99,7 +112,7 @@ __task void newBall( void *pointer ) {
 		os_mut_wait(&drawMut,0xffff);
 		{
 			dt = os_time_get() - lastTime;
-			if(dt < 0) {
+			if(dt < 1) {
 				os_mut_release(&drawMut);
 				os_tsk_pass();
 				continue;
@@ -109,8 +122,10 @@ __task void newBall( void *pointer ) {
 			x0 = ball.x;
 			y0 = ball.y;
 			multiplier = ADC_Value/1000;
-			ball.x += ball.velx*dt;
-			ball.y += ball.vely*dt;
+			velx = ball.velx*multiplier;
+			vely = ball.vely*multiplier;
+			ball.x += velx*dt;
+			ball.y += vely*dt;
 			if(ball.x < 0 || ball.x + ball.size > SCREEN_WIDTH) {
 				ball.velx = -ball.velx;
 				ball.x += ball.velx*dt;
@@ -200,7 +215,8 @@ __task void physics( void ) {
 				}
 			}
 		}
-		//createball = 0;
+		createball = 0;
+		ADCConvert();
 		os_tsk_pass();
 	}
 }
