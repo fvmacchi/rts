@@ -1,13 +1,5 @@
 #include "bitmap.h"
 
-unsigned short *get_bitmap(int size) {
-  unsigned short *bitmap = NULL;
-  do {
-    bitmap = (unsigned short *)malloc(sizeof(unsigned short)*size*size);
-  } while(!bitmap);
-  return bitmap;
-}
-
 void bitmap_clear(unsigned short *bitmap, int size) {
   int i;
   for(i = 0; i < size*size; i++) {
