@@ -128,11 +128,11 @@ __task void newBall( void *pointer ) {
 			ball.y += vely*dt;
 			if(ball.x < 0 || ball.x + ball.size > SCREEN_WIDTH) {
 				ball.velx = -ball.velx;
-				ball.x += ball.velx*dt;
+				ball.x -= velx*dt;
 			}
 			if(ball.y < 0 || ball.y + ball.size > SCREEN_HEIGHT) {
 				ball.vely = -ball.vely;
-				ball.y += ball.vely*dt;
+				ball.y -= vely*dt;
 			}
 			GLCD_Bitmap(ball.x,ball.y,ball.size,ball.size,(unsigned char *)bitmap);
 			bitmap_clear(bitmap, ball.size);
