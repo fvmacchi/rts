@@ -2,6 +2,7 @@
 #include "glcd.h"
 #include <RTL.h>
 #include <stdio.h>
+#include <math.h>
 #include "bitmap.h"
 #include "linked_list.h"
 #include "ball.h"
@@ -17,6 +18,8 @@ OS_MUT drawMut;
 int numBalls = 0;
 
 int speed = 1;
+
+linked_list balls;
 
 volatile int createball = 0;
 volatile double lastInterupt;
@@ -105,6 +108,7 @@ __task void newBall( void *pointer ) {
 	int x, y, width, height;
 	int velx, vely;
 	int multiplier;
+	ball_t *other;
 	volatile double lastTime = os_time_get();
 	volatile double dt = 0;
 	ball_init(&ball, 25, Blue, 0, 0, 1, 1);
@@ -126,6 +130,8 @@ __task void newBall( void *pointer ) {
 			vely = ball.vely*multiplier;
 			ball.x += velx*dt;
 			ball.y += vely*dt;
+
+			// Check for boundary collisions
 			if(ball.x < 0 || ball.x + ball.size > SCREEN_WIDTH) {
 				ball.velx = -ball.velx;
 				ball.x -= velx*dt;
@@ -134,6 +140,20 @@ __task void newBall( void *pointer ) {
 				ball.vely = -ball.vely;
 				ball.y -= vely*dt;
 			}
+
+			// Check for ball collisions
+			other = list_reset(&balls);
+			while(other) {
+				x = other->x - ball.x;
+				y = other->y - ball.y;
+				width = sqrt(x*x + y*y);
+				if(ball.size + other->size <= width*2) {
+					// Collision
+					
+				}
+				other = list_next(&balls);
+			}
+
 			GLCD_Bitmap(ball.x,ball.y,ball.size,ball.size,(unsigned char *)bitmap);
 			bitmap_clear(bitmap, ball.size);
 			
@@ -224,6 +244,7 @@ __task void physics( void ) {
 __task void init_task( void ) {
 	int i;
 	os_mut_init(&drawMut);
+	list_init(&balls);
 	lastInterupt = os_time_get();
 	os_tsk_create(physics,10);
 }
