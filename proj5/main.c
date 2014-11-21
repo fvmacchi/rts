@@ -97,79 +97,81 @@ __task void newBall( void *pointer ) {
 	ball_init(&ball, 25, Blue, 0, 0, 1, 1);
 	while(1) {
 		os_mut_wait(&drawMut,0xffff);
-		dt = os_time_get() - lastTime;
-		if(dt < 2) {
-			os_mut_release(&drawMut);
-			os_tsk_pass();
-			continue;
-		}
-		lastTime = os_time_get();
-		bitmap_circle(bitmap, ball.size, ball.colour);
-		x0 = ball.x;
-		y0 = ball.y;
-		multiplier = ADC_Value/1000;
-		ball.x += ball.velx*dt;
-		ball.y += ball.vely*dt;
-		if(ball.x < 0 || ball.x + ball.size > SCREEN_WIDTH) {
-			ball.velx = -ball.velx;
+		{
+			dt = os_time_get() - lastTime;
+			if(dt < 0) {
+				os_mut_release(&drawMut);
+				os_tsk_pass();
+				continue;
+			}
+			lastTime = os_time_get();
+			bitmap_circle(bitmap, ball.size, ball.colour);
+			x0 = ball.x;
+			y0 = ball.y;
+			multiplier = ADC_Value/1000;
 			ball.x += ball.velx*dt;
-		}
-		if(ball.y < 0 || ball.y + ball.size > SCREEN_HEIGHT) {
-			ball.vely = -ball.vely;
 			ball.y += ball.vely*dt;
-		}
-		GLCD_Bitmap(ball.x,ball.y,ball.size,ball.size,(unsigned char *)bitmap);
-		bitmap_clear(bitmap, ball.size);
-		
-		// Clear previous ball image
-		if(ball.x > x0 + ball.size || ball.x + ball.size < x0 || ball.y > y0 + ball.size || ball.y + ball.size < y0) {
-			GLCD_Bitmap(x0,y0,ball.size,ball.size, (unsigned char *)bitmap);
-		}
-		else {
-			y = y0;
-			height = ball.size;
-			if(x0 < ball.x) {
-				x = x0;
-				width = ball.x - x0 + 1;
+			if(ball.x < 0 || ball.x + ball.size > SCREEN_WIDTH) {
+				ball.velx = -ball.velx;
+				ball.x += ball.velx*dt;
+			}
+			if(ball.y < 0 || ball.y + ball.size > SCREEN_HEIGHT) {
+				ball.vely = -ball.vely;
+				ball.y += ball.vely*dt;
+			}
+			GLCD_Bitmap(ball.x,ball.y,ball.size,ball.size,(unsigned char *)bitmap);
+			bitmap_clear(bitmap, ball.size);
+			
+			// Clear previous ball image
+			if(ball.x > x0 + ball.size || ball.x + ball.size < x0 || ball.y > y0 + ball.size || ball.y + ball.size < y0) {
+				GLCD_Bitmap(x0,y0,ball.size,ball.size, (unsigned char *)bitmap);
 			}
 			else {
-				x = ball.x + ball.size;
-				width = x0 - ball.x + 1;
-			}
-			if(x + width > SCREEN_WIDTH) {
-				width -= x + width - SCREEN_WIDTH;
-			}
-			if(width > 0) {
+				y = y0;
+				height = ball.size;
+				if(x0 < ball.x) {
+					x = x0;
+					width = ball.x - x0 + 1;
+				}
+				else {
+					x = ball.x + ball.size;
+					width = x0 - ball.x + 1;
+				}
+				if(x + width > SCREEN_WIDTH) {
+					width -= x + width - SCREEN_WIDTH;
+				}
+				if(width > 0) {
+					GLCD_Bitmap(x,y,width,height,(unsigned char *)bitmap);
+				}
+				
+				y = y0;
+				height = ball.size;
+				if(x0 < ball.x) {
+					x = x0;
+					width = ball.x - x0;
+				}
+				else {
+					x = ball.x + ball.size;
+					width = x0 - ball.x;
+				}
+				if(y0 < ball.y) {
+					y = y0;
+					height = ball.y - y0;
+				}
+				else {
+					y = ball.y + ball.size;
+					height = y0 - ball.y;
+				}
+				if(x0 < ball.x) {
+					x = ball.x;
+					width = ball.size - ball.x + x0;
+				}
+				else {
+					x = x0;
+					width = ball.size - x0 + ball.x;
+				}
 				GLCD_Bitmap(x,y,width,height,(unsigned char *)bitmap);
 			}
-			
-			y = y0;
-			height = ball.size;
-			if(x0 < ball.x) {
-				x = x0;
-				width = ball.x - x0;
-			}
-			else {
-				x = ball.x + ball.size;
-				width = x0 - ball.x;
-			}
-			if(y0 < ball.y) {
-				y = y0;
-				height = ball.y - y0;
-			}
-			else {
-				y = ball.y + ball.size;
-				height = y0 - ball.y;
-			}
-			if(x0 < ball.x) {
-				x = ball.x;
-				width = ball.size - ball.x + x0;
-			}
-			else {
-				x = x0;
-				width = ball.size - x0 + ball.x;
-			}
-			GLCD_Bitmap(x,y,width,height,(unsigned char *)bitmap);
 		}
 		os_mut_release(&drawMut);
 		os_tsk_pass();
@@ -198,7 +200,7 @@ __task void physics( void ) {
 				}
 			}
 		}
-		createball = 0;
+		//createball = 0;
 		os_tsk_pass();
 	}
 }
