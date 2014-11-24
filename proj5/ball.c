@@ -7,6 +7,9 @@ void ball_init(ball_t *ball, int size, unsigned short colour, int x, int y, int 
 	ball->y = y;
 	ball->velx = velx;
 	ball->vely = vely;
+	if(size % 2 == 0) {
+		size--;
+	}
 	ball->size = size;
 	ball->colour = colour;
 	ball->collision = 0;

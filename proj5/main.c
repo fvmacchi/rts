@@ -27,6 +27,7 @@ volatile unsigned char ADC_Done = 0;
 volatile unsigned short int ADC_Value = 1000;
 const unsigned char ledPosArray[8] = { 28, 29, 31, 2, 3, 4, 5, 6 };
 
+const unsigned short colours[6] = {Red, Blue, Green, Yellow, Purple, Magenta};
 
 // INT0 interrupt handler
 void EINT3_IRQHandler( void ) {
@@ -111,7 +112,7 @@ __task void newBall( void *pointer ) {
 	ball_t *other;
 	volatile double lastTime = os_time_get();
 	volatile double dt = 0;
-	ball_init(&ball, 25, Blue, 0, 0, 1, 1);
+	ball_init(&ball, rand()%30+10, colours[rand()%6], rand()%270, rand()%190, 1, 1);
 	list_add(&balls, &ball);
 	while(1) {
 		os_mut_wait(&drawMut,0xffff);
@@ -242,7 +243,7 @@ __task void newBall( void *pointer ) {
 	os_tsk_delete_self();
 }
 
-__task void physics( void ) {
+__task void main_loop( void ) {
 	ball_t *ball = NULL;
 	OS_TID task;
 	int i;
@@ -274,7 +275,8 @@ __task void init_task( void ) {
 	os_mut_init(&drawMut);
 	list_init(&balls);
 	lastInterupt = os_time_get();
-	os_tsk_create(physics,10);
+	srand(10);
+	os_tsk_create(main_loop,10);
 }
 
 int main( void ) {
