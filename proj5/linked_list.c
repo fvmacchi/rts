@@ -35,6 +35,27 @@ list_type *list_next(linked_list_t *list) {
 	return 0;
 }
 
+void list_remove(linked_list_t *list, list_type *content) {
+	linked_node_t *current = list->root;
+	linked_node_t *previous = NULL;
+	while(current) {
+		if(current->content == content) {
+			// Remove
+			if(!previous) {
+				list->root = current->next;
+			}
+			else {
+				previous->next = current->next;
+			}
+			free(current);
+			list_reset(list);
+			return;
+		}
+		previous = current;
+		current = current->next;
+	}
+}
+
 list_type *list_reset(linked_list_t *list) {
 	list->current = list->root;
 	if(list->current) {

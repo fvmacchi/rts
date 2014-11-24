@@ -9,4 +9,5 @@ void ball_init(ball_t *ball, int size, unsigned short colour, int x, int y, int 
 	ball->vely = vely;
 	ball->size = size;
 	ball->colour = colour;
+	ball->collsion = 0;
 }
