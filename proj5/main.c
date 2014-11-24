@@ -19,7 +19,7 @@ int numBalls = 0;
 
 int speed = 1;
 
-linked_list balls;
+linked_list_t balls;
 
 volatile int createball = 0;
 volatile double lastInterupt;
@@ -112,10 +112,13 @@ __task void newBall( void *pointer ) {
 	volatile double lastTime = os_time_get();
 	volatile double dt = 0;
 	ball_init(&ball, 25, Blue, 0, 0, 1, 1);
+	list_add(&balls, &ball);
 	while(1) {
 		os_mut_wait(&drawMut,0xffff);
 		{
-			if(ball.collsion) {
+			if(ball.collision) {
+				bitmap_clear(bitmap, ball.size);
+				GLCD_Bitmap(ball.x,ball.y,ball.size,ball.size,(unsigned char *)bitmap);
 				list_remove(&balls, &ball);
 				os_mut_release(&drawMut);
 				goto destroy;
@@ -149,12 +152,18 @@ __task void newBall( void *pointer ) {
 			// Check for ball collisions
 			other = list_reset(&balls);
 			while(other) {
+				if(other == &ball){
+					other = list_next(&balls);
+					continue;
+				}
 				x = other->x - ball.x;
 				y = other->y - ball.y;
 				width = sqrt(x*x + y*y);
-				if(ball.size + other->size <= width*2) {
+				if(width*2 <= ball.size + other->size) {
 					// Collision
-					other->collsion = 1;
+					other->collision = 1;
+					bitmap_clear(bitmap, ball.size);
+					GLCD_Bitmap(x0,y0,ball.size,ball.size,(unsigned char *)bitmap);
 					list_remove(&balls, &ball);
 					os_mut_release(&drawMut);
 					goto destroy;
@@ -217,9 +226,18 @@ __task void newBall( void *pointer ) {
 				GLCD_Bitmap(x,y,width,height,(unsigned char *)bitmap);
 			}
 		}
-		destroy:
 		os_mut_release(&drawMut);
 		os_tsk_pass();
+	}
+	destroy:
+	numBalls--;
+	for(x = 0; x < 8; x++) {
+		if(numBalls & (1 << x)) {
+			turnOnLED(x);
+		}
+		else {
+			turnOffLED(x);
+		}
 	}
 	os_tsk_delete_self();
 }
