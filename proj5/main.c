@@ -68,16 +68,6 @@ void ADC_IRQHandler( void ) {
 	ADC_Done = 1;
 }
 
-unsigned short int ADCValue( void ) {
-
-	// Busy wainting until the conversion is done
-	while ( !ADC_Done ) {
-		// Wait for IRQ handler
-	}
-
-	return ADC_Value;
-}
-
 // Turn on the LED inn a position within 0..7
 void turnOnLED( unsigned char led ) {
 	unsigned int mask = (1 << ledPosArray[led]);
