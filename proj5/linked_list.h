@@ -9,6 +9,7 @@ typedef struct linked_node{
 	list_type *content;
 }linked_node_t;
 
+// Linked optimized to iterate through
 typedef struct linked_list {
 	linked_node_t *root;
 	linked_node_t *current;

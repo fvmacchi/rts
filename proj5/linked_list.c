@@ -7,6 +7,7 @@ void list_init(linked_list_t *list) {
 	list->current = list->root;
 }
 
+// Adds new node to beginning of list
 void list_add(linked_list_t *list, list_type *content) {
 	linked_node_t *newNode;
 	do {
@@ -20,6 +21,7 @@ void list_add(linked_list_t *list, list_type *content) {
 	list->current = newNode;
 }
 
+// Returns the currently selected content
 list_type *list_current(linked_list_t *list) {
 	if(list->current != NULL) {
 		return list->current->content;
@@ -27,6 +29,7 @@ list_type *list_current(linked_list_t *list) {
 	return NULL;
 }
 
+// Returns the next in the list
 list_type *list_next(linked_list_t *list) {
 	if(list->current != NULL && list->current->next != NULL) {
 		list->current = list->current->next;
@@ -35,6 +38,7 @@ list_type *list_next(linked_list_t *list) {
 	return 0;
 }
 
+// Removes content from the list
 void list_remove(linked_list_t *list, list_type *content) {
 	linked_node_t *current = list->root;
 	linked_node_t *previous = NULL;
@@ -56,6 +60,7 @@ void list_remove(linked_list_t *list, list_type *content) {
 	}
 }
 
+// Sets the current to the root of the list
 list_type *list_reset(linked_list_t *list) {
 	list->current = list->root;
 	if(list->current) {
