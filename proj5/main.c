@@ -10,14 +10,13 @@
 int SCREEN_WIDTH = 320;
 int SCREEN_HEIGHT = 240;
 
-const int MAX_SIZE = 55;
+const int MAX_SIZE = 40;
 unsigned short bitmap[MAX_SIZE*MAX_SIZE];
 
+// Acts as a mutex for the GLCD, global bitmap, and the linked list of balls
 OS_MUT drawMut;
 
 int numBalls = 0;
-
-int speed = 1;
 
 linked_list_t balls;
 
@@ -28,6 +27,11 @@ volatile unsigned short int ADC_Value = 1000;
 const unsigned char ledPosArray[8] = { 28, 29, 31, 2, 3, 4, 5, 6 };
 
 const unsigned short colours[6] = {Red, Blue, Green, Yellow, Purple, Magenta};
+
+/*
+Interupt code used from
+https://ece.uwaterloo.ca/~dwharder/icsrts/Keil_board/IO_examples/src/io_example_project.zip
+*/
 
 // INT0 interrupt handler
 void EINT3_IRQHandler( void ) {
@@ -112,11 +116,12 @@ __task void newBall( void *pointer ) {
 	ball_t *other;
 	volatile double lastTime = os_time_get();
 	volatile double dt = 0;
-	ball_init(&ball, rand()%30+10, colours[rand()%6], rand()%270, rand()%190, 1, 1);
+	ball_init(&ball, rand()%30+10, colours[rand()%6], rand()%270, rand()%190, rand()%2 == 1 ? 1 : -1, rand()%2 == 1 ? 1 : -1);
 	list_add(&balls, &ball);
 	while(1) {
 		os_mut_wait(&drawMut,0xffff);
 		{
+			// Checks if the ball has been collided with
 			if(ball.collision) {
 				bitmap_clear(bitmap, ball.size);
 				GLCD_Bitmap(ball.x,ball.y,ball.size,ball.size,(unsigned char *)bitmap);
@@ -124,7 +129,9 @@ __task void newBall( void *pointer ) {
 				os_mut_release(&drawMut);
 				goto destroy;
 			}
+			// Gets delta time
 			dt = os_time_get() - lastTime;
+			// Makes sure we don't update more than necessary by making sure one tick has gone by
 			if(dt < 1) {
 				os_mut_release(&drawMut);
 				os_tsk_pass();
@@ -134,6 +141,7 @@ __task void newBall( void *pointer ) {
 			bitmap_circle(bitmap, ball.size, ball.colour);
 			x0 = ball.x;
 			y0 = ball.y;
+			// Changes ball position based on velocity, delta time, and potentiometer value
 			multiplier = ADC_Value/1000;
 			velx = ball.velx*multiplier;
 			vely = ball.vely*multiplier;
@@ -230,6 +238,7 @@ __task void newBall( void *pointer ) {
 		os_mut_release(&drawMut);
 		os_tsk_pass();
 	}
+	// Decrement ball counter and update LEDs
 	destroy:
 	numBalls--;
 	for(x = 0; x < 8; x++) {
@@ -248,10 +257,12 @@ __task void main_loop( void ) {
 	OS_TID task;
 	int i;
 	while(1) {
+		// Checks if interupt was triggered and also does debouncing
 		if(createball && os_time_get() - lastInterupt > 25) {
 			lastInterupt = os_time_get();
 			createball = 0;
 			task = os_tsk_create_ex(newBall, 10, NULL);
+			// Updates LEDs if the new ball task was actually created
 			if(task) {
 				numBalls++;
 				for(i = 0; i < 8; i++) {
